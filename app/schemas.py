@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 # ==================== PRODUCTOS ====================
 class ProductoCreate(BaseModel):
@@ -36,6 +36,10 @@ class UsuarioCreate(BaseModel):
     email: str
     contrasenia: str
 
+class UsuarioLogin(BaseModel):  # 👈 ESTA ES LA QUE FALTA
+    email: str
+    contrasenia: str
+
 class UsuarioResponse(BaseModel):
     id: int
     nombre: str
@@ -54,17 +58,19 @@ class CarritoItemResponse(BaseModel):
     id: int
     producto_id: int
     cantidad: int
-    producto: ProductoResponse
 
     class Config:
         from_attributes = True
-        
-# app/schemas.py - Agregar al final
-class UsuarioResponse(BaseModel):
+
+class CarritoResponse(BaseModel):
     id: int
-    nombre: str
-    email: str
-    es_admin: bool
+    usuario_id: int
+    items: List[CarritoItemResponse]
 
     class Config:
         from_attributes = True
+
+# ==================== TOKEN ====================
+class TokenResponse(BaseModel):
+    token_acceso: str
+    tipo_token: str = "bearer"
