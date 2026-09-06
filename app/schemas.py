@@ -5,7 +5,7 @@ from typing import Optional, List
 class ProductoCreate(BaseModel):
     nombre: str
     descripcion: Optional[str] = None
-    precio_final: float
+    precio: float  # 👈 Cambiado de precio_final a precio
     en_stock: bool = True
     imagen_url: Optional[str] = None
     categoria_id: int

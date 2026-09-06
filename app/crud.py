@@ -1,19 +1,19 @@
 from sqlalchemy.orm import Session
 from app.models import Producto, Categoria, Usuario, Carrito, CarritoItem
-from app.schemas import ProductoCreate
+from app.schemas import ProductoCreate, CategoriaCreate, UsuarioCreate, CarritoItemCreate
+
 # ==================== USUARIOS ====================
 def crear_usuario(db: Session, usuario: UsuarioCreate):
     db_usuario = Usuario(
         nombre=usuario.nombre,
         email=usuario.email,
-        contrasenia=usuario.contrasenia,  # ¡HASHEAR EN PRODUCCIÓN!
+        contrasenia=usuario.contrasenia,
         es_admin=False
     )
     db.add(db_usuario)
     db.commit()
     db.refresh(db_usuario)
     
-    # Crear carrito automáticamente para el usuario
     carrito = Carrito(usuario_id=db_usuario.id)
     db.add(carrito)
     db.commit()
@@ -28,7 +28,14 @@ def obtener_usuario_por_id(db: Session, usuario_id: int):
 
 # ==================== PRODUCTOS ====================
 def crear_producto(db: Session, producto: ProductoCreate):
-    db_producto = Producto(**producto.dict())
+    db_producto = Producto(
+        nombre=producto.nombre,
+        descripcion=producto.descripcion,
+        precio=producto.precio,
+        en_stock=producto.en_stock,
+        imagen_url=producto.imagen_url,
+        categoria_id=producto.categoria_id
+    )
     db.add(db_producto)
     db.commit()
     db.refresh(db_producto)
