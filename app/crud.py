@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models import Producto, Categoria, Usuario, Carrito, CarritoItem
-from app.schemas import ProductoCreate, CategoriaCreate, UsuarioCreate, CarritoItemCreate
-
+from app.schemas import ProductoCreate
 # ==================== USUARIOS ====================
 def crear_usuario(db: Session, usuario: UsuarioCreate):
     db_usuario = Usuario(
