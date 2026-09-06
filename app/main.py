@@ -1,9 +1,20 @@
 from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware  # <-- AGREGAR ESTA LÍNEA
 from sqlalchemy.orm import Session
 from app import crud, schemas, auth
 from app.database import get_db
+from app.models import Categoria, Producto
 
 app = FastAPI(title="E-Commerce API", version="1.0.0")
+
+# ==================== CONFIGURACIÓN DE CORS ====================
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # El puerto donde corre el frontend
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ==================== AUTENTICACIÓN ====================
 
@@ -26,9 +37,9 @@ def login(usuario: schemas.UsuarioLogin, db: Session = Depends(get_db)):
 
 # ==================== PRODUCTOS ====================
 
-# 🔓 Público - Ver productos (requiere token)
+# 🔓 Público - Ver productos (NO requiere token)
 @app.get("/productos", response_model=list[schemas.ProductoResponse])
-def listar_productos(db: Session = Depends(get_db), token_valido: dict = Depends(auth.verificar_token)):
+def listar_productos(db: Session = Depends(get_db)):
     return crud.obtener_productos(db)
 
 # 🔒 Solo Admin - Crear producto
@@ -73,9 +84,9 @@ def eliminar_producto(
 
 # ==================== CATEGORIAS ====================
 
-# 🔓 Público - Ver categorías (requiere token)
+# 🔓 Público - Ver categorías (NO requiere token)
 @app.get("/categorias", response_model=list[schemas.CategoriaResponse])
-def listar_categorias(db: Session = Depends(get_db), token_valido: dict = Depends(auth.verificar_token)):
+def listar_categorias(db: Session = Depends(get_db)):
     return crud.obtener_categorias(db)
 
 # 🔒 Solo Admin - Crear categoría
@@ -88,6 +99,33 @@ def agregar_categoria(
     if not token_valido.get("es_admin"):
         raise HTTPException(status_code=403, detail="No autorizado. Solo administradores pueden crear categorías.")
     return crud.crear_categoria(db, categoria)
+
+# 🔒 Solo Admin - Eliminar categoría
+@app.delete("/categorias/{categoria_id}")
+def eliminar_categoria(
+    categoria_id: int,
+    db: Session = Depends(get_db),
+    token_valido: dict = Depends(auth.verificar_token)
+):
+    # Verificar que sea admin
+    if not token_valido.get("es_admin"):
+        raise HTTPException(status_code=403, detail="No autorizado. Solo administradores pueden eliminar categorías.")
+    
+    # Buscar la categoría
+    categoria = db.query(Categoria).filter(Categoria.id == categoria_id).first()
+    if not categoria:
+        raise HTTPException(status_code=404, detail="Categoría no encontrada")
+    
+    # Verificar que no tenga productos asociados
+    productos_asociados = db.query(Producto).filter(Producto.categoria_id == categoria_id).first()
+    if productos_asociados:
+        raise HTTPException(status_code=400, detail="No se puede eliminar la categoría porque tiene productos asociados")
+    
+    # Eliminar la categoría
+    db.delete(categoria)
+    db.commit()
+    
+    return {"mensaje": f"Categoría '{categoria.nombre}' eliminada correctamente"}
 
 # ==================== CARRITO ====================
 
@@ -133,29 +171,3 @@ def vaciar_carrito(
     usuario_id = token_valido.get("usuario_id")
     crud.vaciar_carrito(db, usuario_id)
     return {"mensaje": "Carrito vaciado correctamente"}
-# ELIMINAR CATEGORÍA (Solo Admin)
-@app.delete("/categorias/{categoria_id}")
-def eliminar_categoria(
-    categoria_id: int,
-    db: Session = Depends(get_db),
-    token_valido: dict = Depends(auth.verificar_token)
-):
-    # Verificar que sea admin
-    if not token_valido.get("es_admin"):
-        raise HTTPException(status_code=403, detail="No autorizado. Solo administradores pueden eliminar categorías.")
-    
-    # Buscar la categoría
-    categoria = db.query(Categoria).filter(Categoria.id == categoria_id).first()
-    if not categoria:
-        raise HTTPException(status_code=404, detail="Categoría no encontrada")
-    
-    # Verificar que no tenga productos asociados
-    productos_asociados = db.query(Producto).filter(Producto.categoria_id == categoria_id).first()
-    if productos_asociados:
-        raise HTTPException(status_code=400, detail="No se puede eliminar la categoría porque tiene productos asociados")
-    
-    # Eliminar la categoría
-    db.delete(categoria)
-    db.commit()
-    
-    return {"mensaje": f"Categoría '{categoria.nombre}' eliminada correctamente"}
