@@ -30,14 +30,16 @@ class Producto(Base):
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, index=True)
     descripcion = Column(String, nullable=True)
-    precio = Column(Float)
+    precio_final = Column(Float)  # 👈 Debe decir 'precio', NO 'precio_final'
     en_stock = Column(Boolean, default=True)
     imagen_url = Column(String, nullable=True)
-    categoria_id = Column(Integer, ForeignKey("categorias.id"))
+    categoria_id = Column(Integer, ForeignKey("categorias.id"), nullable=True)
+    cuotas_cantidad = Column(Integer, default=0)
+    cuotas_valor = Column(Float, default=0.0)
+    garantia_meses = Column(Integer, default=0)
     
     categoria = relationship("Categoria", back_populates="productos")
     items_carrito = relationship("CarritoItem", back_populates="producto")
-
 class Carrito(Base):
     __tablename__ = "carritos"
 

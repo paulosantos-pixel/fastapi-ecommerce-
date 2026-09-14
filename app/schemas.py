@@ -5,10 +5,10 @@ from typing import Optional, List
 class ProductoCreate(BaseModel):
     nombre: str
     descripcion: Optional[str] = None
-    precio: float  # 👈 Cambiado de precio_final a precio
+    precio_final: float
     en_stock: bool = True
     imagen_url: Optional[str] = None
-    categoria_id: int
+    categoria_id: Optional[int] = None
     cuotas_cantidad: int = 0
     cuotas_valor: float = 0.0
     garantia_meses: int = 0
@@ -36,7 +36,7 @@ class UsuarioCreate(BaseModel):
     email: str
     contrasenia: str
 
-class UsuarioLogin(BaseModel):  # 👈 ESTA ES LA QUE FALTA
+class UsuarioLogin(BaseModel):
     email: str
     contrasenia: str
 

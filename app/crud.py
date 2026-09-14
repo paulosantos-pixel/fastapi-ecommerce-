@@ -31,10 +31,13 @@ def crear_producto(db: Session, producto: ProductoCreate):
     db_producto = Producto(
         nombre=producto.nombre,
         descripcion=producto.descripcion,
-        precio=producto.precio,
+        precio_final=producto.precio_final,
         en_stock=producto.en_stock,
         imagen_url=producto.imagen_url,
-        categoria_id=producto.categoria_id
+        categoria_id=producto.categoria_id,
+        cuotas_cantidad=producto.cuotas_cantidad,
+        cuotas_valor=producto.cuotas_valor,
+        garantia_meses=producto.garantia_meses
     )
     db.add(db_producto)
     db.commit()
@@ -52,10 +55,13 @@ def actualizar_producto(db: Session, producto_id: int, datos: ProductoCreate):
     if producto:
         producto.nombre = datos.nombre
         producto.descripcion = datos.descripcion
-        producto.precio = datos.precio
+        producto.precio_final = datos.precio_final
         producto.en_stock = datos.en_stock
         producto.imagen_url = datos.imagen_url
         producto.categoria_id = datos.categoria_id
+        producto.cuotas_cantidad = datos.cuotas_cantidad
+        producto.cuotas_valor = datos.cuotas_valor
+        producto.garantia_meses = datos.garantia_meses
         db.commit()
         db.refresh(producto)
     return producto
