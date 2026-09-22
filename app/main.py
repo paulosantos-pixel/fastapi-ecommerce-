@@ -1,16 +1,17 @@
 from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.middleware.cors import CORSMiddleware  # <-- AGREGAR ESTA LÍNEA
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from app import crud, schemas, auth
 from app.database import get_db
 from app.models import Categoria, Producto
+from app.services import productos as productos_service
 
 app = FastAPI(title="E-Commerce API", version="1.0.0")
 
 # ==================== CONFIGURACIÓN DE CORS ====================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # El puerto donde corre el frontend
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -20,43 +21,50 @@ app.add_middleware(
 
 @app.post("/registro", response_model=schemas.UsuarioResponse)
 def registro(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)):
-    # Verificar si el email ya existe
     usuario_existente = crud.obtener_usuario_por_email(db, usuario.email)
     if usuario_existente:
         raise HTTPException(status_code=400, detail="El email ya está registrado")
     return crud.crear_usuario(db, usuario)
 
+
 @app.post("/login")
 def login(usuario: schemas.UsuarioLogin, db: Session = Depends(get_db)):
     db_usuario = crud.obtener_usuario_por_email(db, usuario.email)
-    if not db_usuario or db_usuario.contrasenia != usuario.contrasenia:  # ¡HASHEAR EN PRODUCCIÓN!
+    if not db_usuario or db_usuario.contrasenia != usuario.contrasenia:
         raise HTTPException(status_code=400, detail="Email o contraseña incorrectos")
     
     token = auth.crear_token_acceso(db_usuario.id, db_usuario.email, db_usuario.es_admin)
     return {"token_acceso": token, "tipo_token": "bearer"}
 
+
 # ==================== PRODUCTOS ====================
 
-@app.get("/productos", response_model=list[schemas.ProductoResponse])
-def listar_productos(db: Session = Depends(get_db)):
-    return crud.obtener_productos(db)
+@app.get("/productos", response_model=list[schemas.ProductoOut])
+def listar_productos(
+    skip: int = 0,
+    limit: int = 10,
+    nombre: str | None = None,
+    precio_max: float | None = None,
+    db: Session = Depends(get_db),
+):
+    return productos_service.listar_productos(db, skip, limit, nombre, precio_max)
 
-# 🔒 Solo Admin - Crear producto
-@app.post("/productos", response_model=schemas.ProductoResponse)
+
+@app.post("/productos", response_model=schemas.ProductoOut)
 def agregar_producto(
-    producto: schemas.ProductoCreate, 
-    db: Session = Depends(get_db), 
+    producto: schemas.ProductoCreate,
+    db: Session = Depends(get_db),
     token_valido: dict = Depends(auth.verificar_token)
 ):
     if not token_valido.get("es_admin"):
         raise HTTPException(status_code=403, detail="No autorizado. Solo administradores pueden crear productos.")
-    return crud.crear_producto(db, producto)
+    return productos_service.crear_producto(db, producto)
 
-# 🔒 Solo Admin - Actualizar producto
-@app.put("/productos/{id}", response_model=schemas.ProductoResponse)
+
+@app.put("/productos/{producto_id}", response_model=schemas.ProductoOut)
 def actualizar_producto(
-    producto_id: int, 
-    datos: schemas.ProductoCreate, 
+    producto_id: int,
+    datos: schemas.ProductoCreate,
     db: Session = Depends(get_db),
     token_valido: dict = Depends(auth.verificar_token)
 ):
@@ -67,11 +75,11 @@ def actualizar_producto(
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     return producto
 
-# 🔒 Solo Admin - Eliminar producto
-@app.delete("/productos/{id}")
+
+@app.delete("/productos/{producto_id}")
 def eliminar_producto(
-    producto_id: int, 
-    db: Session = Depends(get_db), 
+    producto_id: int,
+    db: Session = Depends(get_db),
     token_valido: dict = Depends(auth.verificar_token)
 ):
     if not token_valido.get("es_admin"):
@@ -81,54 +89,50 @@ def eliminar_producto(
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     return {"mensaje": "Producto eliminado"}
 
+
 # ==================== CATEGORIAS ====================
 
-# 🔓 Público - Ver categorías (NO requiere token)
 @app.get("/categorias", response_model=list[schemas.CategoriaResponse])
 def listar_categorias(db: Session = Depends(get_db)):
     return crud.obtener_categorias(db)
 
-# 🔒 Solo Admin - Crear categoría
+
 @app.post("/categorias", response_model=schemas.CategoriaResponse)
 def agregar_categoria(
-    categoria: schemas.CategoriaCreate, 
-    db: Session = Depends(get_db), 
+    categoria: schemas.CategoriaCreate,
+    db: Session = Depends(get_db),
     token_valido: dict = Depends(auth.verificar_token)
 ):
     if not token_valido.get("es_admin"):
         raise HTTPException(status_code=403, detail="No autorizado. Solo administradores pueden crear categorías.")
     return crud.crear_categoria(db, categoria)
 
-# 🔒 Solo Admin - Eliminar categoría
+
 @app.delete("/categorias/{categoria_id}")
 def eliminar_categoria(
     categoria_id: int,
     db: Session = Depends(get_db),
     token_valido: dict = Depends(auth.verificar_token)
 ):
-    # Verificar que sea admin
     if not token_valido.get("es_admin"):
         raise HTTPException(status_code=403, detail="No autorizado. Solo administradores pueden eliminar categorías.")
     
-    # Buscar la categoría
     categoria = db.query(Categoria).filter(Categoria.id == categoria_id).first()
     if not categoria:
         raise HTTPException(status_code=404, detail="Categoría no encontrada")
     
-    # Verificar que no tenga productos asociados
     productos_asociados = db.query(Producto).filter(Producto.categoria_id == categoria_id).first()
     if productos_asociados:
         raise HTTPException(status_code=400, detail="No se puede eliminar la categoría porque tiene productos asociados")
     
-    # Eliminar la categoría
     db.delete(categoria)
     db.commit()
     
     return {"mensaje": f"Categoría '{categoria.nombre}' eliminada correctamente"}
 
+
 # ==================== CARRITO ====================
 
-# 🔒 Privado - Ver mi carrito
 @app.get("/carrito", response_model=schemas.CarritoResponse)
 def ver_carrito(
     db: Session = Depends(get_db),
@@ -138,7 +142,7 @@ def ver_carrito(
     carrito = crud.obtener_carrito(db, usuario_id)
     return carrito
 
-# 🔒 Privado - Agregar producto al carrito
+
 @app.post("/carrito/items", response_model=schemas.CarritoItemResponse)
 def agregar_al_carrito(
     item: schemas.CarritoItemCreate,
@@ -148,7 +152,7 @@ def agregar_al_carrito(
     usuario_id = token_valido.get("usuario_id")
     return crud.agregar_item_carrito(db, usuario_id, item)
 
-# 🔒 Privado - Eliminar item del carrito
+
 @app.delete("/carrito/items/{item_id}")
 def eliminar_del_carrito(
     item_id: int,
@@ -161,7 +165,7 @@ def eliminar_del_carrito(
         raise HTTPException(status_code=404, detail="Item no encontrado")
     return {"mensaje": "Item eliminado del carrito"}
 
-# 🔒 Privado - Vaciar carrito
+
 @app.delete("/carrito/vaciar")
 def vaciar_carrito(
     db: Session = Depends(get_db),

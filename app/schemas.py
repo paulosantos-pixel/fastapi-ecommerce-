@@ -13,7 +13,7 @@ class ProductoCreate(BaseModel):
     cuotas_valor: float = 0.0
     garantia_meses: int = 0
 
-class ProductoResponse(ProductoCreate):
+class ProductoOut(ProductoCreate):
     id: int
 
     class Config:
