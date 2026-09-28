@@ -1,7 +1,7 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
 
-# ==================== PRODUCTOS ====================
+
 class ProductoCreate(BaseModel):
     nombre: str
     descripcion: Optional[str] = None
@@ -13,64 +13,44 @@ class ProductoCreate(BaseModel):
     cuotas_valor: float = 0.0
     garantia_meses: int = 0
 
+
 class ProductoOut(ProductoCreate):
     id: int
-
+    
     class Config:
         from_attributes = True
 
-# ==================== CATEGORIAS ====================
+
 class CategoriaCreate(BaseModel):
     nombre: str
+
 
 class CategoriaResponse(BaseModel):
     id: int
     nombre: str
-
+    
     class Config:
         from_attributes = True
 
-# ==================== USUARIOS ====================
-class UsuarioCreate(BaseModel):
-    nombre: str
-    email: str
-    contrasenia: str
 
-class UsuarioLogin(BaseModel):
-    email: str
-    contrasenia: str
-
-class UsuarioResponse(BaseModel):
-    id: int
-    nombre: str
-    email: str
-    es_admin: bool
-
-    class Config:
-        from_attributes = True
-
-# ==================== CARRITO ====================
 class CarritoItemCreate(BaseModel):
     producto_id: int
     cantidad: int = 1
+
 
 class CarritoItemResponse(BaseModel):
     id: int
     producto_id: int
     cantidad: int
-
+    
     class Config:
         from_attributes = True
+
 
 class CarritoResponse(BaseModel):
     id: int
     usuario_id: int
-    items: List[CarritoItemResponse]
-
+    items: list[CarritoItemResponse]
+    
     class Config:
         from_attributes = True
-
-# ==================== TOKEN ====================
-class TokenResponse(BaseModel):
-    token_acceso: str
-    tipo_token: str = "bearer"

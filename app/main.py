@@ -2,10 +2,10 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from app.core.config import settings
-from app.dependencies import get_db
-from app import crud, schemas, auth
+from app.dependencies import get_db, get_current_user, require_admin
+from app import crud, schemas
 from app.models import Categoria, Producto
-from app.routers import productos
+from app.routers import productos, auth
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
@@ -17,49 +17,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 def raiz():
     return {"status": "ok", "app": settings.PROJECT_NAME}
 
-# ==================== AUTENTICACION ====================
-@app.post("/registro", response_model=schemas.UsuarioResponse)
-def registro(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)):
-    usuario_existente = crud.obtener_usuario_por_email(db, usuario.email)
-    if usuario_existente:
-        raise HTTPException(status_code=400, detail="El email ya esta registrado")
-    return crud.crear_usuario(db, usuario)
-
-@app.post("/login")
-def login(usuario: schemas.UsuarioLogin, db: Session = Depends(get_db)):
-    db_usuario = crud.obtener_usuario_por_email(db, usuario.email)
-    if not db_usuario or db_usuario.contrasenia != usuario.contrasenia:
-        raise HTTPException(status_code=400, detail="Email o contrasena incorrectos")
-    token = auth.crear_token_acceso(db_usuario.id, db_usuario.email, db_usuario.es_admin)
-    return {"token_acceso": token, "tipo_token": "bearer"}
 
 # ==================== CATEGORIAS ====================
 @app.get("/categorias", response_model=list[schemas.CategoriaResponse])
 def listar_categorias(db: Session = Depends(get_db)):
     return crud.obtener_categorias(db)
 
-@app.post("/categorias", response_model=schemas.CategoriaResponse)
+
+@app.post("/categorias", response_model=schemas.CategoriaResponse, status_code=201)
 def agregar_categoria(
     categoria: schemas.CategoriaCreate,
     db: Session = Depends(get_db),
-    token_valido: dict = Depends(auth.verificar_token)
+    admin = Depends(require_admin),
 ):
-    if not token_valido.get("es_admin"):
-        raise HTTPException(status_code=403, detail="No autorizado.")
     return crud.crear_categoria(db, categoria)
+
 
 @app.delete("/categorias/{categoria_id}")
 def eliminar_categoria(
     categoria_id: int,
     db: Session = Depends(get_db),
-    token_valido: dict = Depends(auth.verificar_token)
+    admin = Depends(require_admin),
 ):
-    if not token_valido.get("es_admin"):
-        raise HTTPException(status_code=403, detail="No autorizado.")
     categoria = db.query(Categoria).filter(Categoria.id == categoria_id).first()
     if not categoria:
         raise HTTPException(status_code=404, detail="Categoria no encontrada")
@@ -70,42 +54,41 @@ def eliminar_categoria(
     db.commit()
     return {"mensaje": f"Categoria '{categoria.nombre}' eliminada correctamente"}
 
+
 # ==================== CARRITO ====================
 @app.get("/carrito", response_model=schemas.CarritoResponse)
-def ver_carrito(db: Session = Depends(get_db), token_valido: dict = Depends(auth.verificar_token)):
-    usuario_id = token_valido.get("usuario_id")
-    carrito = crud.obtener_carrito(db, usuario_id)
+def ver_carrito(db: Session = Depends(get_db), usuario = Depends(get_current_user)):
+    carrito = crud.obtener_carrito(db, usuario.id)
     return carrito
+
 
 @app.post("/carrito/items", response_model=schemas.CarritoItemResponse)
 def agregar_al_carrito(
     item: schemas.CarritoItemCreate,
     db: Session = Depends(get_db),
-    token_valido: dict = Depends(auth.verificar_token)
+    usuario = Depends(get_current_user),
 ):
-    usuario_id = token_valido.get("usuario_id")
-    return crud.agregar_item_carrito(db, usuario_id, item)
+    return crud.agregar_item_carrito(db, usuario.id, item)
+
 
 @app.delete("/carrito/items/{item_id}")
 def eliminar_del_carrito(
     item_id: int,
     db: Session = Depends(get_db),
-    token_valido: dict = Depends(auth.verificar_token)
+    usuario = Depends(get_current_user),
 ):
-    usuario_id = token_valido.get("usuario_id")
-    item = crud.eliminar_item_carrito(db, usuario_id, item_id)
+    item = crud.eliminar_item_carrito(db, usuario.id, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item no encontrado")
     return {"mensaje": "Item eliminado del carrito"}
 
+
 @app.delete("/carrito/vaciar")
-def vaciar_carrito(
-    db: Session = Depends(get_db),
-    token_valido: dict = Depends(auth.verificar_token)
-):
-    usuario_id = token_valido.get("usuario_id")
-    crud.vaciar_carrito(db, usuario_id)
+def vaciar_carrito(db: Session = Depends(get_db), usuario = Depends(get_current_user)):
+    crud.vaciar_carrito(db, usuario.id)
     return {"mensaje": "Carrito vaciado correctamente"}
 
+
 # ==================== ROUTERS ====================
+app.include_router(auth.router)
 app.include_router(productos.router)
