@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime, Numeric, func
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from .database import Base
@@ -14,10 +14,13 @@ class Usuario(Base):
     rol = Column(String, default="customer", nullable=False)
     acepto_tratamiento = Column(Boolean, default=False, nullable=False)
     fecha_consentimiento = Column(DateTime(timezone=True), nullable=True)
+    activo = Column(Boolean, default=True, nullable=False)
+    fecha_baja = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     carrito = relationship("Carrito", back_populates="usuario", uselist=False)
     pedidos = relationship("Pedido", back_populates="usuario")
+    solicitudes = relationship("SolicitudRevocacion", back_populates="usuario")
 
 
 class Categoria(Base):
@@ -35,7 +38,8 @@ class Producto(Base):
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, index=True)
     descripcion = Column(String, nullable=True)
-    precio_final = Column(Float)
+    precio_final = Column(Numeric(12, 2), nullable=False)
+    stock = Column(Integer, default=0, nullable=False)
     en_stock = Column(Boolean, default=True)
     imagen_url = Column(String, nullable=True)
     categoria_id = Column(Integer, ForeignKey("categorias.id"), nullable=True)
@@ -76,12 +80,13 @@ class Pedido(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"))
-    estado = Column(String, default="pendiente")
-    total = Column(Float, default=0.0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    estado = Column(String, default="pendiente", nullable=False)
+    total = Column(Numeric(12, 2), default=0, nullable=False)
+    creado_en = Column(DateTime(timezone=True), server_default=func.now())
     
     usuario = relationship("Usuario", back_populates="pedidos")
-    items = relationship("ItemPedido", back_populates="pedido")
+    items = relationship("ItemPedido", back_populates="pedido", cascade="all, delete-orphan")
+    solicitudes = relationship("SolicitudRevocacion", back_populates="pedido")
 
 
 class ItemPedido(Base):
@@ -90,8 +95,21 @@ class ItemPedido(Base):
     id = Column(Integer, primary_key=True, index=True)
     pedido_id = Column(Integer, ForeignKey("pedidos.id"))
     producto_id = Column(Integer, ForeignKey("productos.id"))
-    cantidad = Column(Integer, default=1)
-    precio_unitario = Column(Float, default=0.0)
+    cantidad = Column(Integer, nullable=False)
+    precio_unitario = Column(Numeric(12, 2), nullable=False)
     
     pedido = relationship("Pedido", back_populates="items")
     producto = relationship("Producto")
+
+
+class SolicitudRevocacion(Base):
+    __tablename__ = "solicitudes_revocacion"
+
+    id = Column(Integer, primary_key=True, index=True)
+    codigo = Column(String, unique=True, nullable=False)
+    pedido_id = Column(Integer, ForeignKey("pedidos.id"))
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"))
+    creada_en = Column(DateTime(timezone=True), server_default=func.now())
+    
+    pedido = relationship("Pedido", back_populates="solicitudes")
+    usuario = relationship("Usuario", back_populates="solicitudes")

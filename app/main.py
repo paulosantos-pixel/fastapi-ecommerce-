@@ -5,7 +5,7 @@ from app.core.config import settings
 from app.dependencies import get_db, get_current_user, require_admin
 from app import crud, schemas
 from app.models import Categoria, Producto
-from app.routers import productos, auth
+from app.routers import productos, auth, pedidos, usuarios
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
@@ -92,3 +92,5 @@ def vaciar_carrito(db: Session = Depends(get_db), usuario = Depends(get_current_
 # ==================== ROUTERS ====================
 app.include_router(auth.router)
 app.include_router(productos.router)
+app.include_router(pedidos.router)
+app.include_router(usuarios.router)

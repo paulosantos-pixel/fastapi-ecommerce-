@@ -4,3 +4,6 @@ from app.schemas.productos import (
     CategoriaCreate, CategoriaResponse,
     CarritoItemCreate, CarritoItemResponse, CarritoResponse,
 )
+from app.schemas.pedido import (
+    ItemIn, PedidoCreate, ItemOut, PedidoOut, SolicitudOut,
+)

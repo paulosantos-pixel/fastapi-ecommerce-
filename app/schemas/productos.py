@@ -1,11 +1,13 @@
 from pydantic import BaseModel
 from typing import Optional
+from decimal import Decimal
 
 
 class ProductoCreate(BaseModel):
     nombre: str
     descripcion: Optional[str] = None
-    precio_final: float
+    precio_final: Decimal
+    stock: int = 0
     en_stock: bool = True
     imagen_url: Optional[str] = None
     categoria_id: Optional[int] = None

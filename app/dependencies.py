@@ -18,7 +18,7 @@ def get_db():
 
 
 def get_current_user(token: str = Depends(oauth2), db: Session = Depends(get_db)):
-    error = HTTPException(status_code=401, detail="Credenciales inválidas")
+    error = HTTPException(status_code=401, detail="Credenciales invalidas")
     
     try:
         payload = decodificar_token(token)
@@ -28,7 +28,7 @@ def get_current_user(token: str = Depends(oauth2), db: Session = Depends(get_db)
         raise error
     
     usuario = db.query(Usuario).filter(Usuario.email == payload.get("sub")).first()
-    if usuario is None:
+    if usuario is None or not usuario.activo:
         raise error
     
     return usuario
@@ -36,5 +36,5 @@ def get_current_user(token: str = Depends(oauth2), db: Session = Depends(get_db)
 
 def require_admin(usuario: Usuario = Depends(get_current_user)):
     if usuario.rol != "admin":
-        raise HTTPException(status_code=403, detail="Necesitás ser admin")
+        raise HTTPException(status_code=403, detail="Necesitas ser admin")
     return usuario
