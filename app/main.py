@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
+from pathlib import Path
 from app.core.config import settings
 from app.dependencies import get_db, get_current_user, require_admin
 from app import crud, schemas
@@ -17,13 +19,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+Path("uploads").mkdir(exist_ok=True)
+app.mount("/static", StaticFiles(directory="uploads"), name="static")
+
 
 @app.get("/")
 def raiz():
     return {"status": "ok", "app": settings.PROJECT_NAME}
 
 
-# ==================== CATEGORIAS ====================
 @app.get("/categorias", response_model=list[schemas.CategoriaResponse])
 def listar_categorias(db: Session = Depends(get_db)):
     return crud.obtener_categorias(db)
@@ -55,11 +59,9 @@ def eliminar_categoria(
     return {"mensaje": f"Categoria '{categoria.nombre}' eliminada correctamente"}
 
 
-# ==================== CARRITO ====================
 @app.get("/carrito", response_model=schemas.CarritoResponse)
 def ver_carrito(db: Session = Depends(get_db), usuario = Depends(get_current_user)):
-    carrito = crud.obtener_carrito(db, usuario.id)
-    return carrito
+    return crud.obtener_carrito(db, usuario.id)
 
 
 @app.post("/carrito/items", response_model=schemas.CarritoItemResponse)
@@ -89,7 +91,6 @@ def vaciar_carrito(db: Session = Depends(get_db), usuario = Depends(get_current_
     return {"mensaje": "Carrito vaciado correctamente"}
 
 
-# ==================== ROUTERS ====================
 app.include_router(auth.router)
 app.include_router(productos.router)
 app.include_router(pedidos.router)
