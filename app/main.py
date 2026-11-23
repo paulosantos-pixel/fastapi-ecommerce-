@@ -1,8 +1,9 @@
+from pathlib import Path
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
 from sqlalchemy.orm import Session
-from pathlib import Path
 from app.core.config import settings
 from app.dependencies import get_db, get_current_user, require_admin
 from app import crud, schemas
@@ -19,13 +20,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-Path("uploads").mkdir(exist_ok=True)
+# uploads/ no existe en un contenedor nuevo
+Path("uploads/productos").mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory="uploads"), name="static")
+
+# imágenes de demo: van dentro del repo, sobreviven a cualquier reinicio
+DEMO_DIR = Path("app/static/demo")
+DEMO_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/demo", StaticFiles(directory=str(DEMO_DIR)), name="demo")
 
 
 @app.get("/")
 def raiz():
     return {"status": "ok", "app": settings.PROJECT_NAME}
+
+
+@app.get("/salud")
+def salud(db: Session = Depends(get_db)):
+    db.execute(text("SELECT 1"))
+    return {"estado": "ok", "base": "ok"}
 
 
 @app.get("/categorias", response_model=list[schemas.CategoriaResponse])
