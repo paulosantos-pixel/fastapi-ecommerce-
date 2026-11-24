@@ -39,3 +39,12 @@ class SolicitudOut(BaseModel):
     creada_en: datetime
     
     model_config = {"from_attributes": True}
+    
+class PedidoEstadoUpdate(BaseModel):
+    estado: str
+    
+class PedidoEstadoUpdate(BaseModel):
+    estado: str
+
+class PedidoDelete(BaseModel):
+    password: str
