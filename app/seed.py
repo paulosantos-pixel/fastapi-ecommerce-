@@ -32,14 +32,14 @@ def seed_all():
             db.add(cat)
             db.commit()
 
-        # ACÁ AGREGAMOS MÁS PRODUCTOS CON IMÁGENES DE INTERNET SEGURAS
+        # IMÁGENES DE PEXELS (A PRUEBA DE BALAS)
         jugos = [
-            {"nombre": "Jugo Detox Verde", "descripcion": "Espinaca, apio y manzana verde.", "precio_final": 1700.0, "stock": 10, "imagen_url": "https://images.unsplash.com/photo-1610970881699-44a5587cabec?w=500&q=80"},
-            {"nombre": "Jugo de Naranja", "descripcion": "100% natural, prensado en frío.", "precio_final": 1500.0, "stock": 12, "imagen_url": "https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=500&q=80"},
-            {"nombre": "Jugo Tropical", "descripcion": "Mango, ananá y maracuyá.", "precio_final": 1600.0, "stock": 8, "imagen_url": "https://images.unsplash.com/photo-1595981267035-7b04ca84a82d?w=500&q=80"},
-            {"nombre": "Licuado de Frutilla", "descripcion": "Frutillas frescas con leche y un toque de miel.", "precio_final": 1800.0, "stock": 15, "imagen_url": "https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=500&q=80"},
-            {"nombre": "Batido de Chocolate", "descripcion": "Cacao puro, plátano y avena.", "precio_final": 1900.0, "stock": 10, "imagen_url": "https://images.unsplash.com/photo-1572490122747-3968b75bd58e?w=500&q=80"},
-            {"nombre": "Limonada Artesanal", "descripcion": "Limón, menta y jengibre.", "precio_final": 1400.0, "stock": 20, "imagen_url": "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=500&q=80"},
+            {"nombre": "Jugo Detox Verde", "descripcion": "Espinaca, apio y manzana verde.", "precio_final": 1700.0, "stock": 10, "imagen_url": "https://images.pexels.com/photos/2109099/pexels-photo-2109099.jpeg?auto=compress&cs=tinysrgb&w=600"},
+            {"nombre": "Jugo de Naranja", "descripcion": "100% natural, prensado en frío.", "precio_final": 1500.0, "stock": 12, "imagen_url": "https://images.pexels.com/photos/1337825/pexels-photo-1337825.jpeg?auto=compress&cs=tinysrgb&w=600"},
+            {"nombre": "Jugo Tropical", "descripcion": "Mango, ananá y maracuyá.", "precio_final": 1600.0, "stock": 8, "imagen_url": "https://images.pexels.com/photos/1233319/pexels-photo-1233319.jpeg?auto=compress&cs=tinysrgb&w=600"},
+            {"nombre": "Licuado de Frutilla", "descripcion": "Frutillas frescas con leche y un toque de miel.", "precio_final": 1800.0, "stock": 15, "imagen_url": "https://images.pexels.com/photos/1132558/pexels-photo-1132558.jpeg?auto=compress&cs=tinysrgb&w=600"},
+            {"nombre": "Batido de Chocolate", "descripcion": "Cacao puro, plátano y avena.", "precio_final": 1900.0, "stock": 10, "imagen_url": "https://images.pexels.com/photos/1300589/pexels-photo-1300589.jpeg?auto=compress&cs=tinysrgb&w=600"},
+            {"nombre": "Limonada Artesanal", "descripcion": "Limón, menta y jengibre.", "precio_final": 1400.0, "stock": 20, "imagen_url": "https://images.pexels.com/photos/96974/pexels-photo-96974.jpeg?auto=compress&cs=tinysrgb&w=600"},
         ]
 
         for j in jugos:
@@ -49,7 +49,7 @@ def seed_all():
                 imagen_url=j["imagen_url"], categoria_id=cat.id, en_stock=True
             ))
         db.commit()
-        print(">>> SEEDING COMPLETADO: 6 productos creados con imágenes <<<")
+        print(">>> SEEDING COMPLETADO: 6 productos con imágenes de Pexels <<<")
     except Exception as e:
         db.rollback()
         print(f"Error: {e}")
