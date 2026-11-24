@@ -11,13 +11,11 @@ from app.core.security import hash_password
 def seed_all():
     db = SessionLocal()
     try:
-        # 1. Borrar los productos viejos (Manzana, Banana, etc)
         print("[*] Borrando productos viejos...")
-        db.query(models.ItemPedido).delete() # Borrar items de pedidos viejos primero
+        db.query(models.ItemPedido).delete()
         db.query(models.Producto).delete()
         db.commit()
 
-        # 2. Crear Admin
         admin_email = "admin@frutimix.com"
         if not db.query(models.Usuario).filter_by(email=admin_email).first():
             db.add(models.Usuario(
@@ -28,18 +26,20 @@ def seed_all():
             ))
             db.commit()
 
-        # 3. Crear Categoría
         cat = db.query(models.Categoria).filter_by(nombre="Jugos").first()
         if not cat:
             cat = models.Categoria(nombre="Jugos")
             db.add(cat)
             db.commit()
 
-        # 4. Crear los Jugos
+        # ACÁ AGREGAMOS MÁS PRODUCTOS CON IMÁGENES DE INTERNET SEGURAS
         jugos = [
-            {"nombre": "Jugo Detox Verde", "descripcion": "Espinaca, apio y manzana verde.", "precio_final": 1700.0, "stock": 10, "imagen_url": "/demo/detox.jpg"},
-            {"nombre": "Jugo de Naranja", "descripcion": "100% natural, prensado en frío.", "precio_final": 1500.0, "stock": 12, "imagen_url": "/demo/naranja.jpg"},
-            {"nombre": "Jugo Tropical", "descripcion": "Mango, ananá y maracuyá.", "precio_final": 1600.0, "stock": 8, "imagen_url": "/demo/tropical.jpg"},
+            {"nombre": "Jugo Detox Verde", "descripcion": "Espinaca, apio y manzana verde.", "precio_final": 1700.0, "stock": 10, "imagen_url": "https://images.unsplash.com/photo-1610970881699-44a5587cabec?w=500&q=80"},
+            {"nombre": "Jugo de Naranja", "descripcion": "100% natural, prensado en frío.", "precio_final": 1500.0, "stock": 12, "imagen_url": "https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=500&q=80"},
+            {"nombre": "Jugo Tropical", "descripcion": "Mango, ananá y maracuyá.", "precio_final": 1600.0, "stock": 8, "imagen_url": "https://images.unsplash.com/photo-1595981267035-7b04ca84a82d?w=500&q=80"},
+            {"nombre": "Licuado de Frutilla", "descripcion": "Frutillas frescas con leche y un toque de miel.", "precio_final": 1800.0, "stock": 15, "imagen_url": "https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=500&q=80"},
+            {"nombre": "Batido de Chocolate", "descripcion": "Cacao puro, plátano y avena.", "precio_final": 1900.0, "stock": 10, "imagen_url": "https://images.unsplash.com/photo-1572490122747-3968b75bd58e?w=500&q=80"},
+            {"nombre": "Limonada Artesanal", "descripcion": "Limón, menta y jengibre.", "precio_final": 1400.0, "stock": 20, "imagen_url": "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=500&q=80"},
         ]
 
         for j in jugos:
@@ -49,7 +49,7 @@ def seed_all():
                 imagen_url=j["imagen_url"], categoria_id=cat.id, en_stock=True
             ))
         db.commit()
-        print(">>> SEEDING COMPLETADO: Jugos creados con imágenes <<<")
+        print(">>> SEEDING COMPLETADO: 6 productos creados con imágenes <<<")
     except Exception as e:
         db.rollback()
         print(f"Error: {e}")
