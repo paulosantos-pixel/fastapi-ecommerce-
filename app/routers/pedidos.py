@@ -49,3 +49,14 @@ def detalle(
     if pedido is None or (pedido.usuario_id != usuario.id and usuario.rol != "admin"):
         raise HTTPException(404, "No existe ese pedido")
     return pedido
+
+@router.get("/todos", response_model=list[PedidoOut])
+def todos_los_pedidos(
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if usuario.rol != "admin":
+        raise HTTPException(403, "Solo administradores pueden ver todos los pedidos")
+    
+    # Trae todos los pedidos ordenados del más nuevo al más viejo
+    return db.query(Pedido).order_by(Pedido.creado_en.desc()).all()
